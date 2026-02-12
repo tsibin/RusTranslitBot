@@ -19,8 +19,11 @@ bot.on("inline_query", (msg) => {
 	const existingTimer = inlineDebounceTimers.get(userId);
 	if (existingTimer)
 		clearTimeout(existingTimer);
+	
+	inlineDebounceTimers.delete(userId);
 
 	const timerId = setTimeout(() => {
+		inlineDebounceTimers.delete(userId);
 		var url = 'https://www.google.com/inputtools/request?text='+ encodeURIComponent(source) +'&ime=transliteration_en_ru&num=1&cp=0&cs=0&ie=utf-8&oe=utf-8&app=jsapi&uv&cb=_callbacks_._sdfsdfsdf';
 		fetch(url)
 			.then((r) => r.text())
@@ -34,7 +37,7 @@ bot.on("inline_query", (msg) => {
 				bot.answerInlineQuery(msg.id, [
 				{
 					type: "article",
-					id: "testarticle",
+					id: String(msg.id),
 					title: parseResponse(result, replacers),
 					input_message_content: {
 						message_text: parseResponse(result, replacers)
