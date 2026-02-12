@@ -41,10 +41,10 @@ bot.on("inline_query", (msg) => {
   	]);
 });
 */
-	var timer1;
-	var source;
-	var replacers = [];
-	var commas = [];
+var timer1;
+var source;
+var replacers = [];
+var commas = [];
 
 bot.on("inline_query", (msg) => {
 	let query = msg.query.trim();
@@ -57,16 +57,18 @@ bot.on("inline_query", (msg) => {
 	request(url, (err, resp, body) => {
 		if (err)
 			console.log(err)
+		if (!body)
+			return;
 
 		clearTimeout(timer1);
 		timer1 = setTimeout(function() {
 			var response = body.toString();
 			//console.log(response);
 			console.log(formatDate(new Date()) + ": request");
-			var start = response.indexOf("(");
-			var aaa = response.substring(start);
-			var params = eval(aaa);
-			var result = params[1][0][1][0];
+			var params = parseInputToolsJsonp(response);
+			var result = params?.[1]?.[0]?.[1]?.[0];
+			if (!result)
+				return;
 
 			//console.log("source -> " + source);
 			//console.log("No commas -> " + removeCommas(source));
@@ -85,10 +87,27 @@ bot.on("inline_query", (msg) => {
 	});
 });
 
+function parseInputToolsJsonp(responseText) {
+	try {
+		if (!responseText)
+			return null;
+		var start = responseText.indexOf('(');
+		var end = responseText.lastIndexOf(')');
+		if (start < 0 || end < 0 || end <= start)
+			return null;
+		var jsonText = responseText.slice(start + 1, end);
+		return JSON.parse(jsonText);
+	} catch (e) {
+		console.log(e);
+		return null;
+	}
+}
+
 function formatDate(dt) {
 	var DD = ("0" + dt.getDate()).slice(-2);
 	var MM = ("0" + (dt.getMonth() + 1)).slice(-2);
 	var YYYY = dt.getFullYear();
+
 	var hh = ("0" + dt.getHours()).slice(-2);
 	var mm = ("0" + dt.getMinutes()).slice(-2);
 	var ss = ("0" + dt.getSeconds()).slice(-2);
