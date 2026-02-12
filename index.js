@@ -5,7 +5,6 @@ import request from 'request';
 const bot = new TelegramBot(token, {polling: true});
 var msg1 = null;
 
-bot.on("polling_error", (err) => console.log(err));
 /*
 bot.on('message', (msg) => {
 	var Hi = "hi";
@@ -46,6 +45,7 @@ var source;
 var replacers = [];
 var commas = [];
 
+bot.on("polling_error", (err) => console.log(err));
 bot.on("inline_query", (msg) => {
 	let query = msg.query.trim();
 
