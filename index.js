@@ -53,7 +53,7 @@ bot.on("inline_query", (msg) => {
 		return;
 
 	source = parseQuery(query);
-	var url = 'https://www.google.com/inputtools/request?text='+source+'&ime=transliteration_en_ru&num=1&cp=0&cs=0&ie=utf-8&oe=utf-8&app=jsapi&uv&cb=_callbacks_._sdfsdfsdf';
+	var url = 'https://www.google.com/inputtools/request?text='+ encodeURIComponent(source) +'&ime=transliteration_en_ru&num=1&cp=0&cs=0&ie=utf-8&oe=utf-8&app=jsapi&uv&cb=_callbacks_._sdfsdfsdf';
 	request(url, (err, resp, body) => {
 		if (err)
 			console.log(err)
