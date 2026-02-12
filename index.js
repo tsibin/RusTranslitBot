@@ -1,6 +1,5 @@
 import { token } from './settings.js';
 import TelegramBot from 'node-telegram-bot-api';
-import request from 'request';
 
 const bot = new TelegramBot(token, {polling: true});
 const inlineDebounceTimers = new Map();
@@ -23,29 +22,26 @@ bot.on("inline_query", (msg) => {
 
 	const timerId = setTimeout(() => {
 		var url = 'https://www.google.com/inputtools/request?text='+ encodeURIComponent(source) +'&ime=transliteration_en_ru&num=1&cp=0&cs=0&ie=utf-8&oe=utf-8&app=jsapi&uv&cb=_callbacks_._sdfsdfsdf';
-		request(url, (err, resp, body) => {
-			if (err)
-				console.log(err)
-			if (!body)
-				return;
+		fetch(url)
+			.then((r) => r.text())
+			.then((response) => {
+				console.log(formatDate(new Date()) + ": request");
+				var params = parseInputToolsJsonp(response);
+				var result = params?.[1]?.[0]?.[1]?.[0];
+				if (!result)
+					return;
 
-			var response = body.toString();
-			console.log(formatDate(new Date()) + ": request");
-			var params = parseInputToolsJsonp(response);
-			var result = params?.[1]?.[0]?.[1]?.[0];
-			if (!result)
-				return;
-
-			bot.answerInlineQuery(msg.id, [
-			{
-				type: "article",
-				id: "testarticle",
-				title: parseResponse(result, replacers),
-				input_message_content: {
-					message_text: parseResponse(result, replacers)
-				}
-			}]);
-		});
+				bot.answerInlineQuery(msg.id, [
+				{
+					type: "article",
+					id: "testarticle",
+					title: parseResponse(result, replacers),
+					input_message_content: {
+						message_text: parseResponse(result, replacers)
+					}
+				}]);
+			})
+			.catch((e) => console.log(e));
 	}, 500);
 
 	inlineDebounceTimers.set(userId, timerId);
