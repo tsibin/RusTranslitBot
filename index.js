@@ -40,10 +40,7 @@ bot.on("inline_query", (msg) => {
   	]);
 });
 */
-var timer1;
-var source;
-var replacers = [];
-var commas = [];
+const inlineDebounceTimers = new Map();
 
 bot.on("polling_error", (err) => console.log(err));
 bot.on("inline_query", (msg) => {
@@ -52,16 +49,23 @@ bot.on("inline_query", (msg) => {
 	if (query.length == 0)
 		return;
 
-	source = parseQuery(query);
-	var url = 'https://www.google.com/inputtools/request?text='+ encodeURIComponent(source) +'&ime=transliteration_en_ru&num=1&cp=0&cs=0&ie=utf-8&oe=utf-8&app=jsapi&uv&cb=_callbacks_._sdfsdfsdf';
-	request(url, (err, resp, body) => {
-		if (err)
-			console.log(err)
-		if (!body)
-			return;
+	const parsed = parseQuery(query);
+	const source = parsed.source;
+	const replacers = parsed.replacers;
+	const userId = msg.from?.id ?? msg.id;
 
-		clearTimeout(timer1);
-		timer1 = setTimeout(function() {
+	const existingTimer = inlineDebounceTimers.get(userId);
+	if (existingTimer)
+		clearTimeout(existingTimer);
+
+	const timerId = setTimeout(() => {
+		var url = 'https://www.google.com/inputtools/request?text='+ encodeURIComponent(source) +'&ime=transliteration_en_ru&num=1&cp=0&cs=0&ie=utf-8&oe=utf-8&app=jsapi&uv&cb=_callbacks_._sdfsdfsdf';
+		request(url, (err, resp, body) => {
+			if (err)
+				console.log(err)
+			if (!body)
+				return;
+
 			var response = body.toString();
 			//console.log(response);
 			console.log(formatDate(new Date()) + ": request");
@@ -78,13 +82,15 @@ bot.on("inline_query", (msg) => {
 			{
 				type: "article",
 				id: "testarticle",
-				title: parseResponse(result),
+				title: parseResponse(result, replacers),
 				input_message_content: {
-					message_text: parseResponse(result)
+					message_text: parseResponse(result, replacers)
 				}
 			}]);
-		}, 500);
-	});
+		});
+	}, 500);
+
+	inlineDebounceTimers.set(userId, timerId);
 });
 
 function parseInputToolsJsonp(responseText) {
@@ -118,10 +124,10 @@ function parseQuery(query) {
 	var str = query;
 	var result = "";
 	var counter = 0;
+	var replacers = [];
 
 	var opened = false;
 	var pos = str.indexOf("\"");
-	replacers = [];
 	while (pos >= 0) {
 		if (!opened)
 		{
@@ -131,6 +137,7 @@ function parseQuery(query) {
 			replacers[replacers.length] = str.substr(0, pos);
 			result += "\"";
 		}
+
 		str = str.substr(pos + 1, str.length - pos);
 
 		opened = !opened;
@@ -144,10 +151,13 @@ function parseQuery(query) {
 		counter++;
 	}
 
-	return result + str;
+	return {
+		source: result + str,
+		replacers: replacers
+	};
 }
 
-function parseResponse(response) {
+function parseResponse(response, replacers) {
 	var str = response;
 	var result = "";
 	var counter = 0;
@@ -176,7 +186,7 @@ function removeCommas(query) {
 
 	var wordcounter = 0;
 	var counter = 0;
-	commas = [];
+	var commas = [];
 
 	//to calculate wordcounter correctly
 	//str = globalReplace(str, ", ", ",");
