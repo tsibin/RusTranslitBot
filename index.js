@@ -3,43 +3,6 @@ import TelegramBot from 'node-telegram-bot-api';
 import request from 'request';
 
 const bot = new TelegramBot(token, {polling: true});
-var msg1 = null;
-
-/*
-bot.on('message', (msg) => {
-	var Hi = "hi";
-	if (msg.text.toString().toLowerCase().indexOf(Hi) === 0) {
-		bot.sendMessage(msg.chat.id,"Hello dear user");
-	}
-	else {
-		var url='https://www.google.com/inputtools/request?text='+msg.text.toString()+'&ime=transliteration_en_ru&num=1&cp=0&cs=0&ie=utf-8&oe=utf-8&app=jsapi&uv&cb=_callbacks_._sdfsdfsdf';
-
-		request(url, (err, resp, body) => {
-			var response = body.toString();
-			var start = response.indexOf("(");
-			var aaa = response.substring(start);
-			var params = eval(aaa);
-			var result = params[1][0][1][0];
-
-		   bot.sendMessage(msg.chat.id, result);
-  		});
-	}
-});
-
-bot.on("inline_query", (msg) => {
-	let query = msg.query.trim();
-  	bot.answerInlineQuery(msg.id, [
-	{
-		type: "article",
-		id: "testarticle",
-		title: "Transliterate",
-		input_message_content: {
-			message_text: "+" + query + "+"
-		}
-	}
-  	]);
-});
-*/
 const inlineDebounceTimers = new Map();
 
 bot.on("polling_error", (err) => console.log(err));
@@ -67,16 +30,11 @@ bot.on("inline_query", (msg) => {
 				return;
 
 			var response = body.toString();
-			//console.log(response);
 			console.log(formatDate(new Date()) + ": request");
 			var params = parseInputToolsJsonp(response);
 			var result = params?.[1]?.[0]?.[1]?.[0];
 			if (!result)
 				return;
-
-			//console.log("source -> " + source);
-			//console.log("No commas -> " + removeCommas(source));
-			//console.log(commas);
 
 			bot.answerInlineQuery(msg.id, [
 			{
